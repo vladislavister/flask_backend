@@ -1,11 +1,17 @@
 from flask import jsonify, request
-
+from src import records
 from app import app
+from collections import namedtuple
+import json
 
 USERS = {
     1: "Johny Bravo",
     2: "Peter Griffin"
 }
+
+
+def customRecordDecoder(recordDict):
+    return namedtuple('X', recordDict.keys())(*recordDict.values())
 
 
 @app.route("/users")
@@ -15,11 +21,31 @@ def get_users():
 
 @app.route('/users/<id>')
 def get_user_by_id(id):
-    return USERS[1]
+    USER_RECORDS = []
+    for key in records.RECORDS:
+        recordJSON = records.RECORDS[key]
+        if recordJSON['user_id'] == (int(id),):
+            USER_RECORDS.append(recordJSON)
+
+    return jsonify({"user": USERS[int(id)],
+                    "users_records": USER_RECORDS})
 
 
 @app.route("/users", methods=['POST'])
 def create_user():
     request_data = request.get_json()
-    print(request_data)
+    USERS[int(request_data['id'])] = request_data['name']
+    return "STATUS: OK"
+
+
+@app.route("/users/<id>", methods=['DELETE'])
+def delete_user(id):
+    del USERS[int(id)]
+    return "STATUS: OK"
+
+
+@app.route("/users/<id>", methods=['PUT'])
+def update_user(id):
+    request_data = request.get_json()
+    USERS[int(id)] = request_data['name']
     return "STATUS: OK"
